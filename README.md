@@ -269,7 +269,20 @@ Project\_1\_Medical\_Imaging/
 └── README.md
 
 ```
+## Model Checkpoint
 
+The trained model checkpoint is not included in this repository because of its large file size.
+
+**Expected checkpoint location:**
+```text
+models/fasterrcnn_mobilenetv3_trained.pth
+```
+
+To run the prediction application, obtain the trained checkpoint separately and place it at the path shown above.
+
+If the checkpoint is unavailable, you can reproduce the training process using the training scripts provided in this repository, together with the RSNA Pneumonia Detection dataset.
+
+**Note:** The dataset and trained model weights are not distributed with this repository. This project is an educational demonstration and is not intended for clinical diagnosis.
 
 
 \## 9. Installation and Setup
