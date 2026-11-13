@@ -282,8 +282,7 @@ Project\_1\_Medical\_Imaging/
 
 ```bash
 
-git clone https://github.com/Harishkumar2828
-
+git clone git clone https://github.com/Harishkumar2828/rsna-pneumonia-detection.git
 cd Project\_1\_Medical\_Imaging
 
 ```
