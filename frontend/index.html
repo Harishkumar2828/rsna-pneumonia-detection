@@ -1,0 +1,283 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pneumonia Detection System</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f1f5f9;
+            color: #1e293b;
+        }
+
+        header {
+            background: #12304a;
+            color: white;
+            padding: 25px;
+            text-align: center;
+        }
+
+        header h1 {
+            margin: 0 0 8px;
+        }
+
+        main {
+            max-width: 850px;
+            margin: 35px auto;
+            padding: 20px;
+        }
+
+        .card {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.07);
+            margin-bottom: 20px;
+        }
+
+        .upload-area {
+            border: 2px dashed #94a3b8;
+            border-radius: 10px;
+            padding: 35px 15px;
+            text-align: center;
+        }
+
+        input[type="file"] {
+            margin: 15px 0;
+            max-width: 100%;
+        }
+
+        button {
+            background: #087e8b;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 7px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        button:disabled {
+            background: #94a3b8;
+            cursor: not-allowed;
+        }
+
+        #status {
+            margin-top: 18px;
+            font-weight: bold;
+        }
+
+        #results {
+            display: none;
+        }
+
+        .result-item {
+            background: #f1f5f9;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+
+        .warning {
+            background: #fff7ed;
+            border-left: 4px solid #f97316;
+            padding: 15px;
+            border-radius: 5px;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        footer {
+            text-align: center;
+            padding: 20px;
+            color: #64748b;
+            font-size: 13px;
+        }
+    </style>
+</head>
+
+<body>
+
+<header>
+    <h1>Chest X-ray Pneumonia Detection</h1>
+    <p>AI-based Pneumonia Opacity Detection</p>
+</header>
+
+<main>
+
+    <section class="card">
+        <h2>Upload DICOM Image</h2>
+
+        <div class="upload-area">
+            <p>Select a chest X-ray DICOM file (.dcm)</p>
+
+            <input
+                type="file"
+                id="dicomFile"
+                accept=".dcm,application/dicom"
+            >
+
+            <br>
+
+            <button id="predictButton" onclick="predictImage()">
+                Analyze X-ray
+            </button>
+        </div>
+
+        <div id="status"></div>
+    </section>
+
+    <section class="card" id="results">
+
+        <h2>Detection Results</h2>
+
+        <div id="summary"></div>
+
+        <div id="detections"></div>
+
+    </section>
+
+    <section class="card">
+        <div class="warning">
+            <strong>Research demonstration only:</strong>
+            This system is an experimental machine-learning project.
+            It is not clinically validated and must not be used to
+            diagnose, treat, or make medical decisions.
+        </div>
+    </section>
+
+</main>
+
+<footer>
+    Faster R-CNN MobileNetV3 Large 320 FPN |
+    RSNA Pneumonia Detection Project
+</footer>
+
+<script>
+
+async function predictImage() {
+
+    const fileInput = document.getElementById("dicomFile");
+    const button = document.getElementById("predictButton");
+    const status = document.getElementById("status");
+    const results = document.getElementById("results");
+
+    if (!fileInput.files.length) {
+        status.textContent = "Please select a DICOM file.";
+        return;
+    }
+
+    const file = fileInput.files[0];
+
+    if (!file.name.toLowerCase().endsWith(".dcm")) {
+        status.textContent = "Only .dcm files are supported.";
+        return;
+    }
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    button.disabled = true;
+    status.textContent = "Analyzing X-ray. Please wait...";
+    results.style.display = "none";
+
+    try {
+
+        const response = await fetch("/api/predict", {
+            method: "POST",
+            body: formData
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.error || "Prediction failed.");
+        }
+
+        displayResults(data);
+
+        status.textContent = "Analysis completed successfully.";
+
+    } catch (error) {
+
+        status.textContent = "Error: " + error.message;
+
+    } finally {
+
+        button.disabled = false;
+
+    }
+}
+
+
+function displayResults(data) {
+
+    const results = document.getElementById("results");
+    const summary = document.getElementById("summary");
+    const detections = document.getElementById("detections");
+
+    results.style.display = "block";
+    detections.innerHTML = "";
+
+    summary.innerHTML = `
+        <div class="result-item">
+            <p><strong>Detection status:</strong>
+            ${data.pneumonia_detected
+                ? "Pneumonia opacity detected"
+                : "No pneumonia opacity detected by the model"}
+            </p>
+
+            <p><strong>Detection count:</strong>
+            ${data.detection_count}</p>
+
+            <p><strong>Image dimensions:</strong>
+            ${data.image_dimensions.width} ×
+            ${data.image_dimensions.height}</p>
+
+            <p><strong>Model:</strong> ${data.model}</p>
+
+            <p><strong>Checkpoint epoch:</strong>
+            ${data.checkpoint_epoch}</p>
+        </div>
+    `;
+
+    data.detections.forEach((item, index) => {
+
+        const box = item.bounding_box;
+
+        const element = document.createElement("div");
+        element.className = "result-item";
+
+        const heading = document.createElement("h3");
+        heading.textContent = `Detection ${index + 1}`;
+
+        const className = document.createElement("p");
+        className.textContent = `Class: ${item.class_name}`;
+
+        const confidence = document.createElement("p");
+        confidence.textContent =
+            `Confidence: ${(item.confidence * 100).toFixed(2)}%`;
+
+        const coordinates = document.createElement("p");
+        coordinates.textContent =
+            `Bounding box: (${box.x1}, ${box.y1}) to (${box.x2}, ${box.y2})`;
+
+        element.append(heading, className, confidence, coordinates);
+        detections.appendChild(element);
+
+    });
+
+}
+
+</script>
+
+</body>
+</html>

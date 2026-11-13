@@ -1,0 +1,42 @@
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Medical imaging dataset (do not upload)
+data/raw/
+data/processed/
+
+# Large trained model checkpoints
+*.pth
+*.pt
+*.pth.tar
+
+# Temporary files
+*.tmp
+*.log
+*.bak
+temp/
+
+# Operating system files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE settings
+.vscode/
+.idea/
+
+# Temporary visualization tests
+evaluation/visualizations/matplotlib_test.png
+evaluation/visualizations/test_image.png
+evaluation/visualizations/test_write.txt

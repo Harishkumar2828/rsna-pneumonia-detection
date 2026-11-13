@@ -1,0 +1,17 @@
+
+# Deep Learning
+torch
+torchvision
+
+# Data Processing
+numpy
+pandas
+scikit-learn
+pydicom
+
+# Visualization
+matplotlib
+Pillow
+
+# Backend
+Flask
