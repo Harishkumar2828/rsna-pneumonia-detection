@@ -138,6 +138,24 @@
     <section class="card" id="results">
 
         <h2>Detection Results</h2>
+    <div id="imageViewer" style="display:none; margin-bottom:20px;">
+
+    <h3>Chest X-ray with Detection</h3>
+
+    <div style="position:relative; width:100%; background:#000;">
+        <img
+            id="xrayImage"
+            style="display:block; width:100%; height:auto;"
+            alt="Processed chest X-ray"
+        >
+
+        <canvas
+            id="detectionCanvas"
+            style="position:absolute; top:0; left:0; width:100%; height:100%;"
+        ></canvas>
+    </div>
+
+</div>
 
         <div id="summary"></div>
 
@@ -202,6 +220,7 @@ async function predictImage() {
             throw new Error(data.error || "Prediction failed.");
         }
 
+        displayXray(data);
         displayResults(data);
 
         status.textContent = "Analysis completed successfully.";
@@ -217,6 +236,63 @@ async function predictImage() {
     }
 }
 
+function displayXray(data) {
+
+    const imageViewer = document.getElementById("imageViewer");
+    const xrayImage = document.getElementById("xrayImage");
+    const canvas = document.getElementById("detectionCanvas");
+    const ctx = canvas.getContext("2d");
+
+    imageViewer.style.display = "block";
+
+    xrayImage.onload = function () {
+
+        // Match canvas dimensions to the actual image
+        canvas.width = xrayImage.naturalWidth;
+        canvas.height = xrayImage.naturalHeight;
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Convert original-image coordinates to preview coordinates
+        const scaleX =
+            canvas.width / data.image_dimensions.width;
+
+        const scaleY =
+            canvas.height / data.image_dimensions.height;
+
+        data.detections.forEach((item, index) => {
+
+            const box = item.bounding_box;
+
+            const x = box.x1 * scaleX;
+            const y = box.y1 * scaleY;
+
+            const width = (box.x2 - box.x1) * scaleX;
+            const height = (box.y2 - box.y1) * scaleY;
+
+            // Draw bounding box
+            ctx.strokeStyle = "#ff0000";
+            ctx.lineWidth = 3;
+            ctx.strokeRect(x, y, width, height);
+
+            // Draw confidence label
+            const label =
+                `Pneumonia ${(item.confidence * 100).toFixed(2)}%`;
+
+            ctx.font = "bold 14px Arial";
+            ctx.fillStyle = "#ff0000";
+            ctx.fillRect(x, Math.max(0, y - 22), 150, 22);
+
+            ctx.fillStyle = "#ffffff";
+            ctx.fillText(label, x + 5, Math.max(16, y - 6));
+
+        });
+
+    };
+
+    // Display the Base64 PNG returned by Flask
+    xrayImage.src = data.image_preview;
+}
 
 function displayResults(data) {
 

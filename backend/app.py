@@ -1,4 +1,6 @@
-
+import base64
+from io import BytesIO
+from PIL import Image
 import tempfile
 
 from pathlib import Path
@@ -78,8 +80,30 @@ def predict():
             preprocess_dicom(temporary_path)
         )
 
+        # Convert processed tensor into PNG image
+        image_array = (
+            image.permute(1, 2, 0)
+            .cpu()
+            .numpy() * 255
+        ).clip(0, 255).astype("uint8")
+
+        preview_image = Image.fromarray(image_array)
+
+        # Convert PNG image into Base64
+        image_buffer = BytesIO()
+        preview_image.save(image_buffer, format="PNG")
+
+        image_base64 = base64.b64encode(
+            image_buffer.getvalue()
+        ).decode("utf-8")
+
         # Run model prediction
         result = predict_image(model, image)
+        result["image_preview"] = (
+            "data:image/png;base64," + image_base64
+        )
+
+        print("DEBUG: PNG preview generated:", len(image_base64))
 
         # Convert bounding boxes to original image dimensions
         scale_x = original_width / 512
@@ -104,6 +128,7 @@ def predict():
         result["model"] = "Faster R-CNN MobileNetV3 Large 320 FPN"
         result["checkpoint_epoch"] = 3
 
+        print("DEBUG: Response keys:", list(result.keys()))
         return jsonify(result), 200
 
     except Exception as error:
